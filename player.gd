@@ -10,8 +10,7 @@ var grivity = ProjectSettings.get("physics/2d/default_gravity") as float
 func _physics_process(delta):
 	var direction = Input.get_axis("ui_left","ui_right")
 	velocity.x = direction*RUN_SPEED
-	velocity.y += grivity*delta
-	
+	velocity.y += grivity*delta	 
 	if(is_on_floor() and Input.is_action_just_pressed("jump")):
 		velocity.y = JUMP_VELOCITY
 		
