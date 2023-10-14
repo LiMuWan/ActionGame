@@ -14,8 +14,10 @@ var grivity = ProjectSettings.get("physics/2d/default_gravity") as float
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("jump"):
 		jump_request_timer.start() 
-	if event.is_action_released("jump") and velocity.y < velocity.y/2:
-		velocity = velocity/2
+	if event.is_action_released("jump"):
+		jump_request_timer.stop()
+		if velocity.y < velocity.y/2:
+			velocity = velocity/2
 
 func _physics_process(delta):
 	var direction := Input.get_axis("ui_left","ui_right")
