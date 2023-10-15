@@ -7,6 +7,7 @@ enum State
 	JUMP,
 	FALL,
 	LANDING,
+	WALLSLIDING,
 }
 
 const GROUND_STATES := [State.IDLE,State.RUNNING,State.LANDING]
@@ -18,10 +19,12 @@ const JUMP_VELOCITY := -320.0
 var default_grivity = ProjectSettings.get("physics/2d/default_gravity") as float
 #切换状态后的第一帧
 var is_first_tick := false 
-@onready var sprite_2d = $Sprite2D
+@onready var graphics: Node2D = $Graphics
 @onready var animation_player = $AnimationPlayer
 @onready var coyote_timer: Timer = $CoyoteTimer
 @onready var jump_request_timer: Timer = $JumpRequestTimer
+@onready var hand_check: RayCast2D = $Graphics/HandCheck
+@onready var foot_check: RayCast2D = $Graphics/FootCheck
 
 
 func _input(event: InputEvent) -> void:
@@ -44,6 +47,9 @@ func tick_physics(state:State,delta:float) -> void:
 			move(default_grivity,delta)
 		State.LANDING:
 			move(default_grivity,delta)
+		State.WALLSLIDING:
+			move(default_grivity/3,delta)
+			graphics.scale.x = get_wall_normal().x
 	is_first_tick = false
 			
 func move(gravity:float, delta:float) -> void:
@@ -54,7 +60,7 @@ func move(gravity:float, delta:float) -> void:
 	velocity.y += gravity*delta	 
 	
 	if not is_zero_approx(direction):
-		sprite_2d.flip_h = direction < 0
+		graphics.scale.x = -1 if direction < 0 else +1
 	
 	move_and_slide()
 
@@ -88,9 +94,18 @@ func get_next_state(state: State) -> State:
 		State.FALL:
 			if is_on_floor():
 				return State.LANDING if is_still else State.RUNNING
+			if is_on_wall() and hand_check.is_colliding() and foot_check.is_colliding():
+				return State.WALLSLIDING
 		State.LANDING:
+			if not is_still:
+				return State.RUNNING
 			if not animation_player.is_playing():
 				return State.IDLE
+		State.WALLSLIDING:
+			if is_on_floor():
+				return State.IDLE
+			if not is_on_wall():
+				return State.FALL
 	return state
 	pass
 	
@@ -119,6 +134,9 @@ func transition_state(from: State,to: State) -> void:
 		State.LANDING:
 			print("landing")
 			animation_player.play("landing")
+		State.WALLSLIDING:
+			print("WALLSLIDING")
+			animation_player.play("wall_sliding")
 	is_first_tick = true
 	pass
 	
